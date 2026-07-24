@@ -1,0 +1,6 @@
+node_modules/
+dist/
+*.log
+# Never commit browser profiles — they contain live session cookies.
+profiles/
+.pixel-bridge/

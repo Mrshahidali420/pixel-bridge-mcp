@@ -1,0 +1,31 @@
+name: Bug report
+description: Something broke — a provider flow failed, a file wasn't saved, the server crashed.
+labels: [bug]
+body:
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Provider
+      options: [chatgpt, gemini, both, "not provider-specific"]
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: "e.g. Windows 11, Node 22, launch mode (bundled Chromium) / attach mode (Chrome 141)"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: The tool call you made, what you expected, and what you got instead (paste the returned JSON/error).
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: "Relevant lines from ~/.pixel-bridge/logs/pixel-bridge-<date>.log. A failure screenshot from the same folder helps a lot. REDACT anything personal; never attach browser profiles."
+      render: text

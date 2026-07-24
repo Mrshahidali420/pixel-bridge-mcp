@@ -1,0 +1,15 @@
+name: Feature request
+description: An idea to improve Pixel Bridge (tools, workflow, reliability).
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like?
+      description: What problem does it solve? How would you expect it to work from Claude Code's side?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

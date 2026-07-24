@@ -1,0 +1,24 @@
+name: Provider request
+description: Suggest a new web-based image generation provider to support.
+labels: [provider, enhancement]
+body:
+  - type: input
+    id: provider
+    attributes:
+      label: Provider name and URL
+      placeholder: "e.g. Bing Image Creator — https://www.bing.com/images/create"
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: How does its web UI work?
+      description: "Chat-style prompt box or a dedicated form? Where do generated images appear? Free tier available? Any notes on login flow."
+    validations:
+      required: true
+  - type: checkboxes
+    id: pr
+    attributes:
+      label: Contribution
+      options:
+        - label: I'm willing to open a PR for this adapter (see CONTRIBUTING.md — it's ~60-80 lines)

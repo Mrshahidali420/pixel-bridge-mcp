@@ -1,0 +1,55 @@
+{
+  "name": "pixel-bridge-mcp",
+  "version": "0.1.0",
+  "description": "Pixel Bridge MCP — lets Claude Code generate images through your existing ChatGPT / Gemini web accounts via a persistent, manually-authenticated browser session.",
+  "type": "module",
+  "bin": {
+    "pixel-bridge-mcp": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch",
+    "login": "node dist/cli-login.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "claude",
+    "claude-code",
+    "image-generation",
+    "ai-images",
+    "text-to-image",
+    "image-editing",
+    "chatgpt",
+    "gemini",
+    "browser-automation",
+    "playwright",
+    "no-api-key",
+    "free-image-generation"
+  ],
+  "author": "Shahid Ali (https://www.shahidali.co/)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mrshahidali420/pixel-bridge-mcp.git"
+  },
+  "homepage": "https://github.com/Mrshahidali420/pixel-bridge-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/Mrshahidali420/pixel-bridge-mcp/issues"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "playwright": "^1.61.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "typescript": "^7.0.2"
+  }
+}
