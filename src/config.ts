@@ -35,6 +35,13 @@ export interface Config {
   defaultWaitMs: number;
   /** How long provider_login waits for manual authentication, in ms. */
   loginTimeoutMs: number;
+  /**
+   * How long checkSession waits for the signed-in UI to appear before
+   * reporting "not authenticated", in ms. Chat SPAs render the composer
+   * seconds after domcontentloaded, so a single immediate probe on a cold
+   * start reports a perfectly good session as logged out.
+   */
+  sessionCheckTimeoutMs: number;
 }
 
 function envInt(name: string, fallback: number): number {
@@ -64,6 +71,7 @@ export function loadConfig(): Config {
     generationTimeoutMs: envInt("PIXEL_BRIDGE_GENERATION_TIMEOUT_S", 300) * 1000,
     defaultWaitMs: envInt("PIXEL_BRIDGE_DEFAULT_WAIT_S", 150) * 1000,
     loginTimeoutMs: envInt("PIXEL_BRIDGE_LOGIN_TIMEOUT_S", 300) * 1000,
+    sessionCheckTimeoutMs: envInt("PIXEL_BRIDGE_SESSION_CHECK_TIMEOUT_S", 20) * 1000,
   };
 }
 

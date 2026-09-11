@@ -27,6 +27,9 @@ export class ChatGptProvider extends BaseChatProvider {
   // Generated images are served from OpenAI's file/asset hosts, or exist as
   // in-page blobs while rendering.
   protected readonly imageSrcMarkers = [
+    // Current chatgpt.com serves finished images from its own backend proxy.
+    "/backend-api/estuary/content",
+    "/backend-api/content",
     "oaiusercontent.com",
     "files.openai.com",
     "openai.com/attachments",
@@ -45,10 +48,16 @@ export class ChatGptProvider extends BaseChatProvider {
   }
 
   protected async detectBusy(page: Page): Promise<boolean> {
-    const stop = page
-      .locator('[data-testid="stop-button"], button[aria-label*="Stop" i]')
+    // The stop button disappears while the image itself renders, so the
+    // image-gen loading frame (and its progress bar) must count as busy too —
+    // otherwise a running generation looks like a finished, image-less reply.
+    const busy = page
+      .locator(
+        '[data-testid="stop-button"], button[aria-label*="Stop" i], ' +
+          '[data-testid^="image-gen-loading"], main [role="progressbar"]'
+      )
       .first();
-    return stop.isVisible().catch(() => false);
+    return busy.isVisible().catch(() => false);
   }
 
   protected buildPrompt(req: GenerateRequest): string {
