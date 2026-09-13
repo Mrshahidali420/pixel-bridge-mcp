@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { type Locator, type Page } from "playwright";
 import { browserManager } from "../browser.js";
+import { config } from "../config.js";
 import { getLogger, screenshotPath } from "../logger.js";
 import type {
   CapturedImage,
@@ -63,7 +64,10 @@ export abstract class BaseChatProvider implements ImageProvider {
   async checkSession(): Promise<SessionStatus> {
     return browserManager.withProvider(this.name, async (page) => {
       await this.gotoFresh(page);
-      const authenticated = await this.detectAuthenticated(page);
+      const authenticated = await this.detectAuthenticatedWithin(
+        page,
+        config.sessionCheckTimeoutMs
+      );
       return {
         provider: this.name,
         authenticated,
@@ -118,7 +122,7 @@ export abstract class BaseChatProvider implements ImageProvider {
   private async generateOnPage(page: Page, req: GenerateRequest): Promise<CapturedImage[]> {
     await this.gotoFresh(page);
 
-    if (!(await this.detectAuthenticated(page))) {
+    if (!(await this.detectAuthenticatedWithin(page, config.sessionCheckTimeoutMs))) {
       throw new ProviderError(
         `${this.name} session is not authenticated. Use the provider_login tool and log in manually.`,
         "not_authenticated"
@@ -155,6 +159,20 @@ export abstract class BaseChatProvider implements ImageProvider {
     await page.goto(this.newChatUrl, { waitUntil: "domcontentloaded", timeout: 60_000 });
     // Give SPAs a moment to hydrate; networkidle is unreliable on chat apps.
     await page.waitForTimeout(3000);
+  }
+
+  /**
+   * Poll detectAuthenticated until it turns true or the budget runs out.
+   * A cold profile needs several seconds after domcontentloaded before the
+   * composer exists; probing once would call a live session logged out.
+   */
+  protected async detectAuthenticatedWithin(page: Page, timeoutMs: number): Promise<boolean> {
+    const deadline = Date.now() + timeoutMs;
+    for (;;) {
+      if (await this.detectAuthenticated(page).catch(() => false)) return true;
+      if (Date.now() >= deadline) return false;
+      await page.waitForTimeout(1000);
+    }
   }
 
   protected async findFirst(page: Page, selectors: string[]): Promise<Locator | null> {
@@ -221,7 +239,16 @@ export abstract class BaseChatProvider implements ImageProvider {
         }))
         .filter((i) => i.src && i.width >= minDim && i.height >= minDim);
     }, MIN_IMAGE_DIMENSION);
-    return all.filter((i) => this.looksGenerated(i));
+    // One generated image can occupy several <img> nodes (inline view,
+    // lightbox, preload), which would otherwise be saved as separate files.
+    const unique: PageImage[] = [];
+    const seen = new Set<string>();
+    for (const img of all) {
+      if (!this.looksGenerated(img) || seen.has(img.src)) continue;
+      seen.add(img.src);
+      unique.push(img);
+    }
+    return unique;
   }
 
   protected looksGenerated(img: PageImage): boolean {
@@ -262,9 +289,14 @@ export abstract class BaseChatProvider implements ImageProvider {
 
       // Response finished without any image → likely a refusal or text answer.
       if (fresh.length === 0 && sawBusy && !busy) {
-        await page.waitForTimeout(POLL_MS * 2);
-        const retry = (await this.collectImages(page)).filter((i) => !beforeSrcs.has(i.src));
-        if (retry.length > 0) continue;
+        // The page goes briefly blank between "generating" and the finished
+        // image appearing, so one look is not enough to call this a refusal.
+        let late: PageImage[] = [];
+        for (let attempt = 0; attempt < 3 && late.length === 0; attempt++) {
+          await page.waitForTimeout(POLL_MS);
+          late = (await this.collectImages(page)).filter((i) => !beforeSrcs.has(i.src));
+        }
+        if (late.length > 0) continue;
         const reply = await this.lastResponseText(page).catch(() => "");
         throw new ProviderError(
           `${this.name} finished responding without producing an image.` +
